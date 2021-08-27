@@ -1,25 +1,17 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from 'react';
+import { ethers } from 'ethers';
+import { daoNFTs, map, mapNFTs } from 'crypto';
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div className="Game">
+      <header className="Dam Game">
+        <p>ya boi</p>
       </header>
     </div>
   );
 }
 
 export default App;
+// https://www.youtube.com/watch?v=a0osIaAOFSE&t=1120s
