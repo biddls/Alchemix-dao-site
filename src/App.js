@@ -8,9 +8,10 @@ import daoNFTsABI from "./artifacts/@openzeppelin/contracts/token/ERC1155/preset
 import mapABI from "./artifacts/contracts/ALCX_map.sol/ALCX_map.json"
 import mapNFTsABI from "./artifacts/@openzeppelin/contracts/token/ERC721/ERC721.sol/ERC721.json"
 
-const Map_Addr = "0x0165878A594ca255338adfa4d48449f69242Eb8F"
-const MapNFT_Addr = "0x3B02fF1e626Ed7a8fd6eC5299e2C54e1421B626B"
-const alcDAO_Addr = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+const Map_Addr = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+const MapNFT_Addr = "0x856e4424f806D16E8CBC702B3c0F2ede5468eae5"
+const alcDAO_Addr = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+
 class App extends Component {
 
     async componentWillMount() {
@@ -39,23 +40,31 @@ class App extends Component {
             const map = new web3.eth.Contract(mapABI.abi, Map_Addr)
             const mapNFTs = new web3.eth.Contract(mapNFTsABI.abi, MapNFT_Addr)
             const daoNFTs = new web3.eth.Contract(daoNFTsABI.abi, alcDAO_Addr)
-            this.setState({
-                mapCont: map,
-                mapNFTs: mapNFTs,
-                daoNFTs: daoNFTs,
-                mapNextX: await map.methods.nextX().call(),
-                mapNextY: await map.methods.nextY().call(),
-                radius: await map.methods.radius().call()})
+            this.setState({mapCont: map})
+            this.setState({mapNFTs: mapNFTs})
+            this.setState({daoNFTs: daoNFTs})
+            this.setState({mapNextX: await map.methods.nextX().call()})
+            this.setState({mapNextY: await map.methods.nextY().call()})
+            this.setState({radius: await map.methods.radius().call()})
             let tempMap = await this.createMap(5, () => null)// need to sort
 
             console.log(await this.state.mapCont.methods.map(0, 0))
+            // mapGet_ALCX_DAO_NFT_ID
+            // mapGet_index
+            // mapGet_dead
+            // mapGet_NFTProtection
 
-            // for(let x = 0;x<this.state.radius;x++){
-            //     for(let y = 0;y<this.state.radius;y++){
-            //         tempMap[x][y] = await this.state.mapCont.map.call()
-            //     }
-            // }
-            // console.log(tempMap)
+            for(let x = 0;x<5;x++){
+                for(let y = 0;y<5;y++){
+                    tempMap[x][y] = [
+                        await this.state.mapCont.methods.mapGet_ALCX_DAO_NFT_ID(x,y).call(),
+                        await this.state.mapCont.methods.mapGet_index(x,y).call(),
+                        await this.state.mapCont.methods.mapGet_dead(x,y).call(),
+                        await this.state.mapCont.methods.mapGet_NFTProtection(x,y).call()]
+                }
+            }
+            console.log("temp map", tempMap)
+            this.setState({map: tempMap})
         } else {
             window.alert('Smart contract not deployed to detected network.')
         }
@@ -67,33 +76,23 @@ class App extends Component {
             .map(() => Array(radius).fill().map(mapper))
     }
 
-    async getTile(x, y) {
-        return await this.state.map.methods.map(x, y).call()
+    async redeemLand(){
+        console.log(await this.state.account)
+        // await this.state.daoNFTs.methods.mint(await this.state.account, 0, 1, "0x").call()
     }
-    async keeper(x, y){
-        return (await this.getTile(x, y)).keeper
-    }
-    async DAO_NFT_ID(x, y){
-        return (await this.getTile(x, y)).ALCX_DAO_NFT_ID
-    }
-    async index(x, y){
-        return (await this.getTile(x, y)).index
-    }
-    async dead(x, y){
-        return (await this.getTile(x, y)).dead
-    }
+
 
     constructor(props) {
         super(props)
         this.state = {
-            account: '',
-            mapCont: null,
-            mapNFTsCont: null,
-            daoNFTs: null,
-            mapNextX: null,
-            mapNextY: null,
-            radius: null,
-            map: null,
+            account: "",
+            mapCont: "",
+            mapNFTsCont: "",
+            daoNFTs: "",
+            mapNextX: 0,
+            mapNextY: 0,
+            radius: 0,
+            map: [],
         }
     }
 
@@ -101,6 +100,24 @@ class App extends Component {
         return (
             <div>
                 {this.state.account} - {this.state.mapNextX} - {this.state.mapNextY} - {this.state.radius}
+                <table>
+                    <tbody>
+                    {this.state.map.reverse().slice(0, this.state.map.length).map((item, index) => {
+                        return (
+                            <tr>
+                                <td>{item[0][0] > 1000000 ? "max" : item[0][0]}</td>
+                                <td>{item[1][0]}</td>
+                                <td>{item[2][0]}</td>
+                                <td>{item[3][0]}</td>
+                                <td>{item[4][0]}</td>
+                            </tr>
+                        );
+                    })}
+                    </tbody>
+                </table>
+                <button onClick={this.redeemLand}>
+                    Redeem 1 land
+                </button>
             </div>
         );
     }
