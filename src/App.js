@@ -124,8 +124,29 @@ class App extends Component {
             let amount = Math.abs(this.state.amount)
             await this.state.mapCont.methods.decreaseLandsProtection(this.state.valueX,this.state.valueY,amount).send({from: this.state.account})
         }
-        alert("A name was submitted: " + (this.state.valueX.toString() + this.state.valueY.toString() + this.state.amount.toString()));
         event.preventDefault();
+    }
+
+    handleChangeAttackX(event) {
+        this.setState({AttackX: event.target.value});
+    }
+    handleChangeAttackY(event) {
+        this.setState({AttackY: event.target.value});
+    }
+    handleChangeFromX(event) {
+        this.setState({FromX: event.target.value});
+    }
+    handleChangeFromY(event) {
+        this.setState({FromY: event.target.value});
+    }
+
+    async handleAttack(event) {
+        await this.state.mapCont.methods.magicAttack(this.state.AttackX, this.state.AttackY, this.state.FromX, this.state.FromY).send({from: this.state.account})
+        event.preventDefault();
+    }
+
+    setDisplayMode(mode) {
+        this.setState({mapViewMode: mode})
     }
 
     constructor(props) {
@@ -140,15 +161,26 @@ class App extends Component {
             mapNextY: 0,
             radius: 0,
             map: [],
+            mapViewMode: 0,
             daoNFTAmounts: [],
             valueX: null,
             valueY: null,
             amount: null,
+            AttackX: null,
+            AttackY: null,
+            FromX: null,
+            FromY: null,
         }
         this.handleChangeX = this.handleChangeX.bind(this);
         this.handleChangeY = this.handleChangeY.bind(this);
         this.handleChangeAmount = this.handleChangeAmount.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChangeAttackX = this.handleChangeAttackX.bind(this);
+        this.handleChangeAttackY = this.handleChangeAttackY.bind(this);
+        this.handleChangeFromX = this.handleChangeFromX.bind(this);
+        this.handleChangeFromY = this.handleChangeFromY.bind(this);
+        this.handleAttack = this.handleAttack.bind(this);
+
     }
 
     render() {
@@ -157,23 +189,35 @@ class App extends Component {
                 <h1 style={{ color: 'red' }}>Welcome to Biddls DAO game</h1>
                 Account addr: {this.state.account}<br/>
                 Maps next NFT: ({this.state.mapNextX}, {this.state.mapNextY})<br/>
-                Maps radius: {this.state.radius}<br/>
-                <table>
+                Maps radius: {this.state.radius}<br/><br/>
+                Maps view mode: {this.state.mapViewMode}<br/>
+                0: the DAO NFT ID number of the tile<br/>
+                1: the index of the tile<br/>
+                2: whether or not its dead<br/>
+                3: how many NFTs does it had protecting it<br/><br/>
+                Set Display mode:<br/>
+                <button onClick={() => this.setDisplayMode(0)}>0</button>
+                <button onClick={() => this.setDisplayMode(1)}>1</button>
+                <button onClick={() => this.setDisplayMode(2)}>2</button>
+                <button onClick={() => this.setDisplayMode(3)}>3</button><br/><br/>
+                <table border="1">
                     <tbody>
                     {this.state.map.reverse().slice(0, this.state.map.length).map((item, index) => {
                         return (
                             <tr>
-                                <td>{item[0][0] > 1000000 ? "max" : item[0][1]}</td>
-                                {/*<td>{item[0][1] < 100 ? item[0][1] : "dead"}</td>*/}
-                                <td>{item[1][1] >= 1 ? item[1][1] : "dead"}</td>
-                                <td>{item[2][1] >= 1 ? item[2][1] : "dead"}</td>
-                                <td>{item[3][1] >= 1 ? item[3][1] : "dead"}</td>
-                                <td>{item[4][1] >= 1 ? item[4][1] : "dead"}</td>
+                                <td>{item[0][0] > 1000000 ? "max" : item[0][this.state.mapViewMode]}</td>
+                                {/*<td>{item[0][1] < 100 ? item[0][this.state.mapViewMode] : "dead"}</td>*/}
+                                <td>{item[1][1] >= 1 ? item[1][this.state.mapViewMode] : "dead"}</td>
+                                <td>{item[2][1] >= 1 ? item[2][this.state.mapViewMode] : "dead"}</td>
+                                <td>{item[3][1] >= 1 ? item[3][this.state.mapViewMode] : "dead"}</td>
+                                <td>{item[4][1] >= 1 ? item[4][this.state.mapViewMode] : "dead"}</td>
                             </tr>
                         );
                     })}
                     </tbody>
                 </table>
+                <br/>
+
                 <button onClick={() => this.get1ID_DAO(0)}>Redeem 1 nft ID 0</button>
                 <button onClick={() => this.get1ID_DAO(1)}>Redeem 1 nft ID 1</button>
                 <button onClick={() => this.get1ID_DAO(2)}>Redeem 1 nft ID 2</button>
@@ -186,6 +230,7 @@ class App extends Component {
                 ID1: {this.state.daoNFTAmounts[1]}<br/>
                 ID2: {this.state.daoNFTAmounts[2]}<br/>
                 ID3: {this.state.daoNFTAmounts[3]}<br/>
+                ID3: {this.state.daoNFTAmounts[4]}<br/>
 
                 <h4 style={{ color: 'red' }}>Redeem map pieces, make sure to grant approval</h4>
 
@@ -205,6 +250,20 @@ class App extends Component {
                         <input type="number" value={this.state.valueY} onChange={this.handleChangeY}/><br/>
                         Amount +/-ve:<br/>
                         <input type="number" value={this.state.amount} onChange={this.handleChangeAmount}/><br/>
+                    </label>
+                    <input type="submit" value="Submit" />
+                </form>
+                <h4 style={{ color: 'red' }}>Magic Attack</h4>
+                <form onSubmit={this.handleAttack}>
+                    <label>
+                        Attack X:<br/>
+                        <input type="number" value={this.state.AttackX} onChange={this.handleChangeAttackX}/><br/>
+                        Attack Y:<br/>
+                        <input type="number" value={this.state.AttackY} onChange={this.handleChangeAttackY}/><br/>
+                        From X:<br/>
+                        <input type="number" value={this.state.FromX} onChange={this.handleChangeFromX}/><br/>
+                        From Y:<br/>
+                        <input type="number" value={this.state.FromY} onChange={this.handleChangeFromY}/><br/>
                     </label>
                     <input type="submit" value="Submit" />
                 </form>
