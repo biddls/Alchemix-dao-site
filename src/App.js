@@ -204,7 +204,9 @@ class App extends Component {
     render() {
         return (
             <div>
-                <h1 style={{ color: 'red' }}>Welcome to Biddls DAO game</h1>
+                <h1 style={{ color: 'red' }}>Welcome to Biddls DAO game</h1><br/>
+                This project is on rinkiby atm so you will need rinkiby eth<br/>
+                https://faucet.rinkeby.io/ and to select the rinkeby network on ur wallet<br/>
                 Account addr: {this.state.account}<br/>
                 Maps next NFT: ({this.state.mapNextX}, {this.state.mapNextY})<br/>
                 Maps radius: {this.state.radius}<br/><br/>
