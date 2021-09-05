@@ -35,12 +35,11 @@ class App extends Component {
 
     async loadBlockChainData() {
         const web3 = window.web3
-        web3.eth.getChainId().then(console.log);
         const accounts = await web3.eth.getAccounts()
         this.setState({account: accounts[0]})
 
         const networkId = await web3.eth.net.getId()
-        if(networkId === 31337) {
+        if(networkId === 4) {
             const map = new web3.eth.Contract(mapABI.abi, Map_Addr)
             const mapNFTs = new web3.eth.Contract(mapNFTsABI.abi, MapNFT_Addr)
             const daoNFTs = new web3.eth.Contract(daoNFTsABI.abi, alcDAO_Addr)
