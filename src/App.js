@@ -9,10 +9,10 @@ import mapABI from "./artifacts/contracts/ALCX_map.sol/ALCX_map.json"
 import mapNFTsABI from "./artifacts/@openzeppelin/contracts/token/ERC721/ERC721.sol/ERC721.json"
 import DAO_mintABI from "./artifacts/contracts/DAO_mint.sol/DAO_mint.json"
 
-const Map_Addr = "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584"
-const MapNFT_Addr = "0x86699f95700424A20eDf530041f3869480604aC9"
-const alcDAO_Addr = "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823"
-const DAO_mint_Addr = "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2"
+const Map_Addr = "0x712701A9a98809E19aa7e62E96C14eCeb52245bc"
+const MapNFT_Addr = "0x228F7A2eDF001a2010fcFD45711d3672Fe9dF007"
+const alcDAO_Addr = "0xEffF10B7E537FE380c4bA740Bb455A59231669f4"
+const DAO_mint_Addr = "0x724Bc75124b7346698899edaeC3Cf9C8E7Da9Ab3"
 
 
 class App extends Component {
@@ -53,10 +53,9 @@ class App extends Component {
             this.setState({radius: await map.methods.radius().call()})
             let tempMap = await this.createMap(5, () => null)// need to sort
 
-            console.log(await this.state.mapCont.methods.map(0, 0))
             for(let x = 0;x<5;x++){
                 for(let y = 0;y<5;y++){
-                    tempMap[x][y] = [
+                    tempMap[y][x] = [
                         await this.state.mapCont.methods.mapContExternal_ALCX_DAO_NFT_ID(x,y).call(),
                         await this.state.mapCont.methods.mapContExternal_index(x,y).call(),
                         await this.state.mapCont.methods.mapContExternal_dead(x,y).call(),
@@ -64,7 +63,6 @@ class App extends Component {
                     ]
                 }
             }
-            console.log("temp map", tempMap)
             this.setState({map: tempMap})
 
             let amounts = [
@@ -86,14 +84,35 @@ class App extends Component {
             .map(() => Array(radius).fill().map(mapper))
     }
 
+    async getOwnedTiles(){
+        const radius = this.state.radius
+        let owned = []
+        const nftsOwned = await this.state.mapNFTs.methods.balanceOf(this.state.account).call()
+        for (let x=0;x<radius;x++){
+            for (let y=0;y<radius;y++){
+                if(!((x === y) && (y === 0))) {
+                    if (!await this.state.mapCont.methods.mapContExternal_dead(x, y).call()) {
+                        let id = await this.state.mapCont.methods.mapContExternal_index(x, y).call()
+                        console.log(x, y, id, !await this.state.mapCont.methods.mapContExternal_dead(x, y).call())
+                        if (await this.state.mapNFTs.methods.ownerOf(id).call() === this.state.account) {
+                            if(nftsOwned > owned.length) {
+                                owned.push([x, y])
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        this.setState({daoNFTOwnedAmounts: owned})
+        this.setState({daoNFTsOwned: nftsOwned})
+    }
+
     async get1ID_DAO(id){
         await this.state.DAO_mint.methods.getNFTs([id], [1], "0x").send({ from: this.state.account })
-        console.log("added 1 of ID:", id)
     }
 
     async get1ID_MAP(id){
         await this.state.mapCont.methods.redeemNFTsForLand([id], [1], ).send({ from: this.state.account })
-        console.log("added 1 of ID:", id)
     }
 
     async getAmountofDaoID(id){
@@ -113,7 +132,6 @@ class App extends Component {
     handleChangeAmount(event) {
         this.setState({amount: event.target.value});
     }
-
     async handleSubmit(event) {
         // this.state.valueX
         // this.state.valueY
@@ -139,7 +157,6 @@ class App extends Component {
     handleChangeFromY(event) {
         this.setState({FromY: event.target.value});
     }
-
     async handleAttack(event) {
         await this.state.mapCont.methods.magicAttack(this.state.AttackX, this.state.AttackY, this.state.FromX, this.state.FromY).send({from: this.state.account})
         event.preventDefault();
@@ -163,6 +180,8 @@ class App extends Component {
             map: [],
             mapViewMode: 0,
             daoNFTAmounts: [],
+            daoNFTOwnedAmounts: [],
+            daoNFTsOwned: 0,
             valueX: null,
             valueY: null,
             amount: null,
@@ -180,7 +199,6 @@ class App extends Component {
         this.handleChangeFromX = this.handleChangeFromX.bind(this);
         this.handleChangeFromY = this.handleChangeFromY.bind(this);
         this.handleAttack = this.handleAttack.bind(this);
-
     }
 
     render() {
@@ -205,17 +223,30 @@ class App extends Component {
                     {this.state.map.reverse().slice(0, this.state.map.length).map((item, index) => {
                         return (
                             <tr>
-                                <td>{item[0][0] > 1000000 ? "max" : item[0][this.state.mapViewMode]}</td>
-                                {/*<td>{item[0][1] < 100 ? item[0][this.state.mapViewMode] : "dead"}</td>*/}
-                                <td>{item[1][1] >= 1 ? item[1][this.state.mapViewMode] : "dead"}</td>
-                                <td>{item[2][1] >= 1 ? item[2][this.state.mapViewMode] : "dead"}</td>
-                                <td>{item[3][1] >= 1 ? item[3][this.state.mapViewMode] : "dead"}</td>
-                                <td>{item[4][1] >= 1 ? item[4][this.state.mapViewMode] : "dead"}</td>
+                                <td>{(item[0][0] > 1000000) && (this.state.mapViewMode === 0) ? "max"
+                                    :item[0][1] >= 1 ? (item[0][this.state.mapViewMode] ? item[0][this.state.mapViewMode] : "Alive") : "dead"}</td>
+                                <td>{item[1][1] >= 1 ? (item[1][this.state.mapViewMode] ? item[1][this.state.mapViewMode] : "Alive") : "dead"}</td>
+                                <td>{item[2][1] >= 1 ? (item[2][this.state.mapViewMode] ? item[2][this.state.mapViewMode] : "Alive") : "dead"}</td>
+                                <td>{item[3][1] >= 1 ? (item[3][this.state.mapViewMode] ? item[3][this.state.mapViewMode] : "Alive") : "dead"}</td>
+                                <td>{item[4][1] >= 1 ? (item[4][this.state.mapViewMode] ? item[4][this.state.mapViewMode] : "Alive") : "dead"}</td>
                             </tr>
                         );
                     })}
                     </tbody>
                 </table>
+                <br/>
+                <button onClick={() => this.getOwnedTiles()}>List tiles owned you own: {this.state.daoNFTsOwned.toString()}</button>
+                <br/>
+                <table border="1">
+                    <tbody>
+                    {this.state.daoNFTOwnedAmounts.map((item, index) => {
+                        return (
+                            <td>{"(" + item[0].toString() + ", " + item[1].toString() + ")"}</td>
+                        );
+                    })}
+                    </tbody>
+                </table>
+
                 <br/>
 
                 <button onClick={() => this.get1ID_DAO(0)}>Redeem 1 nft ID 0</button>
