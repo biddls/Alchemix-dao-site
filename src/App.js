@@ -1,19 +1,29 @@
+// https://reactnativeelements.com/docs/tile/
 import React, { Component } from 'react';
 import Web3 from 'web3'
 import './App.css';
+import commenceAttack from "./Requests/attackTile"
 // import { useState } from 'react';
 // import { ethers } from 'ethers';
 
 import daoNFTsABI from "./artifacts/@openzeppelin/contracts/token/ERC1155/presets/ERC1155PresetMinterPauser.sol/ERC1155PresetMinterPauser.json"
 import mapABI from "./artifacts/contracts/ALCX_map.sol/ALCX_map.json"
+import Magic_attackABI from "./artifacts/contracts/magic_attack.sol/Magic_attack.json"
 import mapNFTsABI from "./artifacts/@openzeppelin/contracts/token/ERC721/ERC721.sol/ERC721.json"
 import DAO_mintABI from "./artifacts/contracts/DAO_mint.sol/DAO_mint.json"
 
-const Map_Addr = "0x712701A9a98809E19aa7e62E96C14eCeb52245bc"
-const MapNFT_Addr = "0x228F7A2eDF001a2010fcFD45711d3672Fe9dF007"
-const alcDAO_Addr = "0xEffF10B7E537FE380c4bA740Bb455A59231669f4"
-const DAO_mint_Addr = "0x724Bc75124b7346698899edaeC3Cf9C8E7Da9Ab3"
+const Map_Addr = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+const Magic_attack_Addr = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+const MapNFT_Addr = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"
+const alcDAO_Addr = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+const DAO_mint_Addr = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
 
+
+
+// const Map_Addr = "0x712701A9a98809E19aa7e62E96C14eCeb52245bc"
+// const MapNFT_Addr = "0x228F7A2eDF001a2010fcFD45711d3672Fe9dF007"
+// const alcDAO_Addr = "0xEffF10B7E537FE380c4bA740Bb455A59231669f4"
+// const DAO_mint_Addr = "0x724Bc75124b7346698899edaeC3Cf9C8E7Da9Ab3"
 
 class App extends Component {
 
@@ -39,13 +49,16 @@ class App extends Component {
         this.setState({account: accounts[0]})
 
         const networkId = await web3.eth.net.getId()
-        if(networkId === 4) {
+        // if(networkId === 4) { // rinkiby
+        if(networkId === 31337) { // dev network
             const map = new web3.eth.Contract(mapABI.abi, Map_Addr)
+            const Magic_attack = new web3.eth.Contract(Magic_attackABI.abi, Magic_attack_Addr)
             const mapNFTs = new web3.eth.Contract(mapNFTsABI.abi, MapNFT_Addr)
             const daoNFTs = new web3.eth.Contract(daoNFTsABI.abi, alcDAO_Addr)
             const DAO_mint = new web3.eth.Contract(DAO_mintABI.abi, DAO_mint_Addr)
             this.setState({mapCont: map})
             this.setState({mapNFTs: mapNFTs})
+            this.setState({Magic_attack: Magic_attack})
             this.setState({daoNFTs: daoNFTs})
             this.setState({DAO_mint: DAO_mint})
             this.setState({mapNextX: await map.methods.nextX().call()})
@@ -137,10 +150,10 @@ class App extends Component {
         // this.state.valueY
         if(this.state.amount > 0){
             let amount = Math.abs(this.state.amount)
-            await this.state.mapCont.methods.increaseLandsProtection(this.state.valueX,this.state.valueY,amount).send({from: this.state.account})
+            await this.state.Magic_attack.methods.increaseLandsProtection(this.state.valueX,this.state.valueY,amount).send({from: this.state.account})
         } else {
             let amount = Math.abs(this.state.amount)
-            await this.state.mapCont.methods.decreaseLandsProtection(this.state.valueX,this.state.valueY,amount).send({from: this.state.account})
+            await this.state.Magic_attack.methods.decreaseLandsProtection(this.state.valueX,this.state.valueY,amount).send({from: this.state.account})
         }
         event.preventDefault();
     }
@@ -157,9 +170,19 @@ class App extends Component {
     handleChangeFromY(event) {
         this.setState({FromY: event.target.value});
     }
+    handleChangeAttackAmount(event) {
+        this.setState({AttackAmount: event.target.value});
+    }
     async handleAttack(event) {
-        await this.state.mapCont.methods.magicAttack(this.state.AttackX, this.state.AttackY, this.state.FromX, this.state.FromY).send({from: this.state.account})
+        await this.state.Magic_attack.methods.magicAttack(
+            this.state.AttackX,
+            this.state.AttackY,
+            this.state.FromX,
+            this.state.FromY,
+            this.state.AttackAmount
+        ).send({from: this.state.account})
         event.preventDefault();
+
     }
 
     setDisplayMode(mode) {
@@ -171,6 +194,7 @@ class App extends Component {
         this.state = {
             account: "",
             mapCont: "",
+            Magic_attack: "",
             mapNFTs: "",
             daoNFTs: "",
             DAO_mint: "",
@@ -189,6 +213,7 @@ class App extends Component {
             AttackY: null,
             FromX: null,
             FromY: null,
+            AttackAmount: null,
         }
         this.handleChangeX = this.handleChangeX.bind(this);
         this.handleChangeY = this.handleChangeY.bind(this);
@@ -198,6 +223,7 @@ class App extends Component {
         this.handleChangeAttackY = this.handleChangeAttackY.bind(this);
         this.handleChangeFromX = this.handleChangeFromX.bind(this);
         this.handleChangeFromY = this.handleChangeFromY.bind(this);
+        this.handleChangeAttackAmount = this.handleChangeAttackAmount.bind(this);
         this.handleAttack = this.handleAttack.bind(this);
     }
 
@@ -263,7 +289,7 @@ class App extends Component {
                 ID1: {this.state.daoNFTAmounts[1]}<br/>
                 ID2: {this.state.daoNFTAmounts[2]}<br/>
                 ID3: {this.state.daoNFTAmounts[3]}<br/>
-                ID3: {this.state.daoNFTAmounts[4]}<br/>
+                ID4: {this.state.daoNFTAmounts[4]}<br/>
 
                 <h4 style={{ color: 'red' }}>Redeem map pieces, make sure to grant approval</h4>
 
@@ -297,6 +323,8 @@ class App extends Component {
                         <input type="number" value={this.state.FromX} onChange={this.handleChangeFromX}/><br/>
                         From Y:<br/>
                         <input type="number" value={this.state.FromY} onChange={this.handleChangeFromY}/><br/>
+                        Amount:<br/>
+                        <input type="number" value={this.state.AttackAmount} onChange={this.handleChangeAttackAmount}/><br/>
                     </label>
                     <input type="submit" value="Submit" />
                 </form>
